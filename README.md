@@ -67,7 +67,7 @@ python train-speaker-level-similarity-model.py \
     --seen_base_path $SEEN_BASE_PATH \
     --output_path $OUTPUT_PATH \
     --model $MODEL \
-    --speaker_list "${OUTPUT_PATH}/${MODEL}-customized-speaker-level-attack-similarity.csv"
+    --speaker_list "${OUTPUT_PATH}/${MODEL}-predefined-speaker-level-attack-similarity.csv"
 
 python customized-speaker-level-MIA.py \
     --seen_base_path $SEEN_BASE_PATH \
@@ -104,7 +104,7 @@ python train-utterance-level-similarity-model.py \
     --seen_base_path $SEEN_BASE_PATH \
     --output_path $OUTPUT_PATH \
     --model $MODEL \
-    --speaker_list "${OUTPUT_PATH}/${MODEL}-customized-utterance-level-attack-similarity.csv"
+    --utterance_list "${OUTPUT_PATH}/${MODEL}-predefined-utterance-level-attack-similarity.csv"
 
 python customized-utterance-level-MIA.py \
     --seen_base_path $SEEN_BASE_PATH \
