@@ -20,7 +20,7 @@ def main(args):
     random.seed(args.seed)
 
     seen_splits = ["train-clean-100"]
-    unseen_splits = ["test-clean", "test-other", "dev-clean", "dev-other"]
+    unseen_splits = ["test-clean", "test-other"]
 
     # Load dataset
     seen_dataset = CustomizedUtteranceLevelDataset(
@@ -64,7 +64,7 @@ def main(args):
             for sim, utterance in zip(pred, utterances):
                 seen_utterance_sim[utterance] = sim.cpu().item()
 
-    # Calculate similarity scores of seen data
+    # Calculate similarity scores of unseen data
     unseen_utterance_sim = defaultdict(float)
 
     with torch.no_grad():
@@ -155,11 +155,11 @@ def main(args):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument(
-        "--seen_base_path",
+        "--seen_base_path",default="/work3/s194632/LibriSpeech_features",
         help="directory of feature of the seen dataset (default LibriSpeech-100)",
     )
     parser.add_argument(
-        "--unseen_base_path",
+        "--unseen_base_path",default="/work3/s194632/LibriSpeech_features",
         help="directory of feature of the unseen dataset (default LibriSpeech-[dev/test])",
     )
     parser.add_argument("--output_path", help="directory to save the analysis results")

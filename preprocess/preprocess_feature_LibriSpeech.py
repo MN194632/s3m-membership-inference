@@ -68,9 +68,9 @@ def main(args):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument("--base_path", help="directory of LibriSpeech dataset")
+    parser.add_argument("--base_path",default ="/work3/s194632/LibriSpeech", help="directory of LibriSpeech dataset")
     parser.add_argument("--split", default="wav48")
-    parser.add_argument("--output_path", help="directory to save feautures")
+    parser.add_argument("--output_path",default = "/work3/s194632/LibriSpeech_features", help="directory to save feautures")
     parser.add_argument("--output_prefix", help="prefix of the output filename")
     parser.add_argument(
         "--model", help="which self-supervised model to extract features"

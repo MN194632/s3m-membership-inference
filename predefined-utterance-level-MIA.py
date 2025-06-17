@@ -21,7 +21,7 @@ def main(args):
     random.seed(args.seed)
 
     seen_splits = ["train-clean-100"]
-    unseen_splits = ["test-clean", "test-other", "dev-clean", "dev-other"]
+    unseen_splits = ["dev-clean", "dev-other"]
 
     # Load the dataset
     seen_dataset = PredefinedUtteranceLevelDataset(
@@ -92,6 +92,10 @@ def main(args):
     result_df = pd.DataFrame(
         {"Percentile": percentile_choice, "Adversarial Advantage": AA, "Threshold": THR}
     )
+    output_folder = args.output_path
+    if not os.path.exists(output_folder):
+        os.makedirs(output_folder)
+        tqdm.write(f"Directory {output_folder} Created ")
 
     result_df.to_csv(
         os.path.join(
@@ -147,11 +151,11 @@ def main(args):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument(
-        "--seen_base_path",
+        "--seen_base_path",default="/work3/s194632/LibriSpeech_features",
         help="directory of feature of the seen dataset (default LibriSpeech-100)",
     )
     parser.add_argument(
-        "--unseen_base_path",
+        "--unseen_base_path",default="/work3/s194632/LibriSpeech_features",
         help="directory of feature of the unseen dataset (default LibriSpeech-[dev/test])",
     )
     parser.add_argument("--output_path", help="directory to save the analysis results")

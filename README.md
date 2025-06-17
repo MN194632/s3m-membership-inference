@@ -51,11 +51,11 @@ UNSEEN_BASE_PATH=/path/you/save/feature/of/unseen/corpus
 OUTPUT_PATH=/path/to/output/results
 MODEL=wav2vec2
 
-python predefined-speaker-level-MIA.py \
-    --seen_base_path $SEEN_BASE_PATH \
-    --unseen_base_path $UNSEEN_BASE_PATH \
+python3 predefined-speaker-level-MIA.py \
     --output_path $OUTPUT_PATH \
     --model $MODEL \
+    --seen_base_path $SEEN_BASE_PATH \
+    --unseen_base_path $UNSEEN_BASE_PATH \
 
 ```
 
@@ -88,11 +88,11 @@ UNSEEN_BASE_PATH=/path/you/save/feature/of/unseen/corpus
 OUTPUT_PATH=/path/to/output/results
 MODEL=wav2vec2
 
-python predefined-utterance-level-MIA.py \
-    --seen_base_path $SEEN_BASE_PATH \
-    --unseen_base_path $UNSEEN_BASE_PATH \
+python3 predefined-utterance-level-MIA.py \
     --output_path $OUTPUT_PATH \
     --model $MODEL \
+    --seen_base_path $SEEN_BASE_PATH \
+    --unseen_base_path $UNSEEN_BASE_PATH \
 
 ```
 
@@ -100,18 +100,19 @@ python predefined-utterance-level-MIA.py \
 
 ```sh
 
-python train-utterance-level-similarity-model.py \
-    --seen_base_path $SEEN_BASE_PATH \
-    --output_path $OUTPUT_PATH \
+python3 train-utterance-level-similarity-model.py \
+    --output_path $OUTPUT_PATH \    
     --model $MODEL \
     --utterance_list "${OUTPUT_PATH}/${MODEL}-predefined-utterance-level-attack-similarity.csv"
-
-python customized-utterance-level-MIA.py \
+    
     --seen_base_path $SEEN_BASE_PATH \
-    --unseen_base_path $UNSEEN_BASE_PATH \
+
+python3 customized-utterance-level-MIA.py \
     --output_path $OUTPUT_PATH \
     --model $MODEL \
-    --similarity_model_path "${OUTPUT_PATH}/customized-utterance-similarity-model-${MODEL}.pt"
+    --similarity_model_path "${OUTPUT_PATH}/customized-utterance-similarity-model-${MODEL}.pt"\
+    --seen_base_path $SEEN_BASE_PATH \
+    --unseen_base_path $UNSEEN_BASE_PATH \
 
 ```
 

@@ -128,11 +128,10 @@ def main(args):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument(
-        "--base_path", help="directory of feature of LibriSpeech dataset"
+        "--base_path", default="/work3/s194632/LibriSpeech_features",help="directory of feature of LibriSpeech dataset"
     )
     parser.add_argument("--output_path", help="directory to save the model")
-    parser.add_argument(
-        "--model", help="which self-supervised model you used to extract features"
+    parser.add_argument("--model", help="which self-supervised model you used to extract features"
     )
     parser.add_argument("--seed", type=int, default=57, help="random seed")
     parser.add_argument(
@@ -150,7 +149,6 @@ if __name__ == "__main__":
     parser.add_argument("--n_epochs", type=int, default=30, help="training epoch")
     parser.add_argument("--num_workers", type=int, default=2, help="number of workers")
     parser.add_argument("--lr", type=float, default=1e-5, help="learning rate")
-    parser.add_argument("--seed", type=int, default=None, help="random seed")
     args = parser.parse_args()
 
     main(args)

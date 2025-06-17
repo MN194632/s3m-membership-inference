@@ -177,11 +177,11 @@ def main(args):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument(
-        "--seen_base_path",
+        "--seen_base_path",default="/work3/s194632/LibriSpeech_features",
         help="directory of feature of the seen dataset (default LibriSpeech-100)",
     )
     parser.add_argument(
-        "--unseen_base_path",
+        "--unseen_base_path",default="/work3/s194632/LibriSpeech_features",
         help="directory of feature of the unseen dataset (default LibriSpeech-[dev/test])",
     )
     parser.add_argument("--output_path", help="directory to save the analysis results")

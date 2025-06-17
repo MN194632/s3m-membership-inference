@@ -91,9 +91,14 @@ def main(args):
         {"Percentile": percentile_choice, "Adversarial Advantage": AA, "Threshold": THR}
     )
 
+    output_folder = args.output_path
+    if not os.path.exists(output_folder):
+        os.makedirs(output_folder)
+        tqdm.write(f"Directory {output_folder} Created ")
+
     result_df.to_csv(
         os.path.join(
-            args.output_path,
+            output_folder,
             f"{args.model}-predefined-speaker-level-attack-result.csv",
         ),
         index=False,
@@ -145,12 +150,12 @@ def main(args):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument(
-        "--seen_base_path",
-        help="directory of feature of the seen dataset (default LibriSpeech-100)",
+        "--seen_base_path",default="/work3/s194632/LibriSpeech_features",
+        help="directory of feature of the seen dataset",
     )
     parser.add_argument(
-        "--unseen_base_path",
-        help="directory of feature of the unseen dataset (default LibriSpeech-[dev/test])",
+        "--unseen_base_path", default="/work3/s194632/LibriSpeech_features",
+        help="directory of feature of the unseen dataset",
     )
     parser.add_argument("--output_path", help="directory to save the analysis results")
     parser.add_argument(
