@@ -3,6 +3,8 @@ import os
 import numpy as np
 import pandas as pd
 import torch
+import json
+import math
 from collections import defaultdict
 from sklearn.metrics.pairwise import cosine_similarity, euclidean_distances
 from sklearn.neighbors import NearestNeighbors
@@ -17,20 +19,42 @@ device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 
 class MemorisationAnalyser:
-    def __init__(self, base_path, model_name, similarity_model_path=None):
+    def __init__(self, base_path, model_name, model_info_path):
         self.base_path = base_path
         self.model_name = model_name
-        self.similarity_model_path = similarity_model_path
+        self.model_info_path = model_info_path
         
-        # Load the data WE KNOW/think we know was used in pretraining of SSL for memorisation evaluation - hence membership true label is 1 for all samples. 
+        # Load model info including the pre-determined threshold
+        self.load_model_info()
+        
         seen_splits = ["train-clean-100"]
-        unseen_slits = ["test-clean","test-other"]
+        unseen_splits = ["test-clean","test-other"]
         self.seen_dataset = CustomizedUtteranceLevelDataset(base_path, seen_splits, model_name)
-        self.unseen_dataset = CustomizedUtteranceLevelDataset(base_path, unseen_slits, model_name)
+        self.unseen_dataset = CustomizedUtteranceLevelDataset(base_path, unseen_splits, model_name)
 
         # Results storage
         self.seen_results = []
         self.unseen_results = []
+        
+    def load_model_info(self):
+        """Load the model info including the optimal threshold from training"""
+        if not os.path.exists(self.model_info_path):
+            raise FileNotFoundError(
+                f"Model info file not found: {self.model_info_path}\n"
+                f"Please run train-utterance-level-similarity-model.py first!"
+            )
+        
+        with open(self.model_info_path, 'r') as f:
+            self.model_info = json.load(f)
+        
+        self.optimal_threshold = self.model_info['optimal_threshold']
+        self.similarity_model_path = self.model_info['model_path']
+        self.input_dim = self.model_info['input_dim']
+        
+        print(f"Loaded model info:")
+        print(f"  Optimal threshold: {self.optimal_threshold:.4f}")
+        print(f"  Model path: {self.similarity_model_path}")
+        print(f"  Input dimension: {self.input_dim}")
         
     def extract_high_confidence_samples(self, confidence_threshold=0.9):
         """Extract samples where MIA confidently predicts they were seen (memorisation candidates)
@@ -42,20 +66,19 @@ class MemorisationAnalyser:
         """
         
         print("Calculating MIA scores/logits for similarity for seen samples...")
-
         seen_scores, seen_features, seen_paths = self._calculate_mia_scores(self.seen_dataset, "seen")
+        
+        print("Calculating MIA scores/logits for similarity for unseen samples...")
         unseen_scores, unseen_features, unseen_paths = self._calculate_mia_scores(self.unseen_dataset, "unseen")
         
-        # median of unseen to try
-        percentile = 50
-        sorted_unseen_sim = sorted(unseen_scores)
-        threshold = threshold = sorted_unseen_sim[
-            min(math.floor(len(unseen_scores) * percentile / 100), len(unseen_scores) - 1)
-        ]
+        # FIXED: Use the pre-determined optimal threshold instead of calculating from test data
+        threshold = self.optimal_threshold
+        print(f"Using pre-determined optimal threshold: {threshold:.4f}")
         
         seen_scores = np.array(seen_scores)
         unseen_scores = np.array(unseen_scores)
-        # Classify each seen sample based on MIA prediction
+        
+        # Classify each seen sample based on MIA prediction using fixed threshold
         predicted_seen_mask = seen_scores > threshold
         predicted_unseen_mask = seen_scores <= threshold
         
@@ -124,34 +147,28 @@ class MemorisationAnalyser:
         paths = []
         
         # Use improved attack model (similarity model)
-        if self.similarity_model_path and os.path.exists(self.similarity_model_path):
-            sim_predictor = self._load_similarity_model()
-            
-            for _, (utterance_features, utterance_paths) in enumerate(tqdm(dataloader, desc=f"Processing {label}")):
-                for feature, path in zip(utterance_features, utterance_paths):
-                    features_list = [torch.FloatTensor(feature).to(device)]
-                    with torch.no_grad():
-                        logit = sim_predictor(features_list)[0]
-                        score = logit.cpu().item()  
-                    
-                    scores.append(score)
-                    features.append(feature)
-                    paths.append(path)
+        sim_predictor = self._load_similarity_model()
+        
+        for _, (utterance_features, utterance_paths) in enumerate(tqdm(dataloader, desc=f"Processing {label}")):
+            for feature, path in zip(utterance_features, utterance_paths):
+                features_list = [torch.FloatTensor(feature).to(device)]
+                with torch.no_grad():
+                    logit = sim_predictor(features_list)[0]
+                    score = logit.cpu().item()  
+                
+                scores.append(score)
+                features.append(feature)
+                paths.append(path)
 
-            return scores, features, paths
-        else:
-            raise ValueError("Path to similarity NN is not valid")
+        return scores, features, paths
     
     def _load_similarity_model(self):
         """Load the trained similarity model"""
         ckpt = torch.load(self.similarity_model_path, map_location=device)
-        input_dim = ckpt["linear.weight"].shape[0]
-        sim_predictor = UtteranceLevelModel(input_dim).to(device)
+        sim_predictor = UtteranceLevelModel(self.input_dim).to(device)
         sim_predictor.load_state_dict(ckpt)
         sim_predictor.eval()
         return sim_predictor
-    
-
     
     def analyse_rarity_patterns(self, high_conf_data):
         """Analyse what makes high-confidence memorisation candidates rare/atypical"""
@@ -338,7 +355,9 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--base_path",default="/work3/s194632/LibriSpeech_features")
     parser.add_argument("--model", default="wav2vec2")
-    parser.add_argument("--similarity_model_path", default="/work3/s194632/MIA_results_predefined_utterance_level_results_dev/customized-utterance-similarity-model-wav2vec2.pt")
+    parser.add_argument("--model_info_path", 
+                       default="/work3/s194632/MIA_results/customized-utterance-model-info-wav2vec2.json",
+                       help="Path to model info JSON file from training")
     parser.add_argument("--output_path", default="/work3/s194632/MIA_results/memorisation_results")
     parser.add_argument("--confidence_threshold", type=float, default=0.9)
     
@@ -351,7 +370,7 @@ def main():
     analyser = MemorisationAnalyser(
         args.base_path,
         args.model,
-        args.similarity_model_path
+        args.model_info_path
     )
     
     # Extract high-confidence samples
@@ -373,9 +392,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-    # analyser = MemorisationAnalyser(
-    # "/work3/s194632/LibriSpeech_features",
-    # "wav2vec2",
-    # "/work3/s194632/MIA_results/predefined_utterance_level_results/customized-utterance-similarity-model-wav2vec2.pt")
-    # high_conf_data = analyser.extract_high_confidence_samples(0.9)
-
